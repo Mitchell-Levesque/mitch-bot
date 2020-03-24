@@ -57,7 +57,7 @@ async def opgg(ctx, *, summoner: str):
     message = await ctx.send(embed=embed)
 
     # Get url for the op.gg page depending on region
-    if(region == 'KR'):
+    if(cur_region == 'KR'):
       url = 'https://www.op.gg/summoner/userName=%s' % summoner
     else:
       url = 'https://%s.op.gg/summoner/userName=%s' % (cur_region, summoner)
