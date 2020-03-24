@@ -12,7 +12,7 @@ def italics(message: str) -> str:
   return "_"+message+"_"
 
 #Discord Bot Token
-token = 'NDQ0OTkyNDcyMjA5NDI0Mzg0.XjiJKA.fNH1C5KsFnn2T16QemUU43HVdpE'
+token = mytoken.token
 
 # Create bot instance with prefix !
 client = discord.Client()
