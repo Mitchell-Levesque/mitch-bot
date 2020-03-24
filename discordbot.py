@@ -15,6 +15,11 @@ token = mytoken.token
 client = discord.Client()
 bot = commands.Bot(command_prefix='!')
 
+# Set discord status on ready
+@bot.event
+async def on_ready():
+  await bot.change_presence(status=discord.Status.mro, activity=discord.Game("!help"))
+
 # Command for looking up summoner names on North American server
 @bot.command(name='opgg')
 async def opgg(ctx,*, summoner: str):
