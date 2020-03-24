@@ -1,5 +1,6 @@
 import discord
 import requests
+import mytoken
 from discord.ext import commands
 from bs4 import BeautifulSoup
 from timeit import default_timer as timer
