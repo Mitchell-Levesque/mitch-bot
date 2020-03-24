@@ -8,32 +8,71 @@ from discord.ext import commands
 import mytoken
 import utility
 
-#Discord Bot Token
+# Global variable for tracking current op.gg lookup region (default NA)
+cur_region = 'NA'
+# List of possible regions
+regions = ['NA', 'EUW', 'KR', 'EUNE', 'JP', 'OCE', 'BR', 'LAS', 'LAN', 'RU', 'TR']
+
+# Discord Bot Token
 token = mytoken.token
 
 # Create bot instance with prefix !
 client = discord.Client()
 bot = commands.Bot(command_prefix='!')
+# Remove existing help command
+bot.remove_command("help")
 
 # Set discord status on ready
 @bot.event
 async def on_ready():
-  await bot.change_presence(status=discord.Status.mro, activity=discord.Game("!help"))
+  await bot.change_presence(status=discord.Status.mro, activity=discord.Game('!help'))
 
+# Command for switching op.gg lookup region (bot on NA)
+@bot.command(name='region')
+async def region(ctx, rg: str='None'):
+  global cur_region
+  if(rg == 'None'):
+    await ctx.send("Current region: %s" % cur_region)
+  else:
+    rg = rg.upper()
+    if(rg in regions):
+      cur_region = rg
+      await ctx.send("Region has been switched to %s." % cur_region)
+    else:
+      await ctx.send("Region %s is undefined." % rg)
+  
 # Command for looking up summoner names on North American server
 @bot.command(name='opgg')
-async def opgg(ctx,*, summoner: str):
+async def opgg(ctx, *, summoner: str):
   try:
     # Start timer for function
     start = timer()
 
-    # Get html for the na.op.gg page
-    url = 'https://na.op.gg/summoner/userName=' + summoner
+    # Send loading message
+    embed = discord.Embed(
+      color = discord.Color.orange()
+    )
+    embed.title = 'Loading...'
+    embed.set_thumbnail(url='https://www.easypestcontrol.in/js/loaderimg.gif')
+    message = await ctx.send(embed=embed)
+
+    # Get url for the op.gg page depending on region
+    if(region == 'KR'):
+      url = 'https://www.op.gg/summoner/userName=%s' % summoner
+    else:
+      url = 'https://%s.op.gg/summoner/userName=%s' % (cur_region, summoner)
+    
+    # Get html from the url
     response = requests.get(url)
     soup = BeautifulSoup(response.text, 'html.parser')
 
     # Find summoner name and rank
-    summoner = soup.find(class_='Name').get_text().strip()
+    names = soup.find_all(class_='Name')
+    summoner = names[0].get_text().strip()
+    # If the first name returned contains "[", then it means it was a pro player on op.gg.
+    # So, it's actually the second name instance which is their summoner name
+    if('[' in summoner):
+      summoner = names[1].get_text().strip()
     rank = soup.find(class_='TierRank').get_text().strip()
     
     # If the player is ranked, then get LP and win/loss record
@@ -51,7 +90,8 @@ async def opgg(ctx,*, summoner: str):
     
   # If an exception is thrown, the summoner does not exist
   except:
-    await ctx.send("Summoner does not exist.")
+    await discord.Message.delete(message)
+    await ctx.send("Summoner does not exist.\nRegion: %s" % cur_region)
     return
   
   # Make embed message with orange color
@@ -93,13 +133,27 @@ async def opgg(ctx,*, summoner: str):
 
 
   # We have 3 rows, Summoner name, Rank and Win ratio.  Place these values
-  embed.add_field(name='Summoner', value=utility.bold(summoner)+" (NA)", inline=False)
+  embed.add_field(name='Summoner', value=utility.bold(summoner)+" (%s)"%cur_region, inline=False)
   embed.add_field(name='Rank', value=ranklbl, inline=False)
   embed.add_field(name='Win/Loss', value=winlosslbl, inline=False)
 
   # Stop the timer for the function, and place footer message including time the lookup took, and author's discord tag
   end = timer()
-  embed.set_footer(text="Data taken from OP.GG\nThis lookup took %0.2f seconds." % (end-start), icon_url='https://static-s.aa-cdn.net/img/gp/20600001273372/UdvXlkugn0bJcwiDkqHKG5IElodmv-oL4kHlNAklSA2sdlVWhojsZKaPE-qFPueiZg=s300')
+  embed.set_footer(text="Data taken from OP.GG\nThis lookup took %0.2f seconds." % (end-start), 
+                  icon_url='https://static-s.aa-cdn.net/img/gp/20600001273372/UdvXlkugn0bJcwiDkqHKG5IElodmv-oL4kHlNAklSA2sdlVWhojsZKaPE-qFPueiZg=s300')
+
+  # Delete loading message and then send embed message
+  await discord.Message.delete(message)
+  await ctx.send(embed=embed)
+
+@bot.command(name='help')
+async def help(ctx):
+  embed = discord.Embed(
+    color = discord.Color.dark_orange()
+  )
+
+  embed.set_footer(text="Any problems? Contact Aalmost#5337")
+
   await ctx.send(embed=embed)
 
 # Command used to easily exit the bot
