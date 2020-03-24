@@ -1,16 +1,12 @@
-import discord
-import requests
-import mytoken
-from discord.ext import commands
-from bs4 import BeautifulSoup
 from timeit import default_timer as timer
 
-# Simply utility function for bolding strings according to Discord's syntax
-def bold(message: str) -> str:
-  return "**"+message+"**"
+import discord
+import requests
+from bs4 import BeautifulSoup
+from discord.ext import commands
 
-def italics(message: str) -> str:
-  return "_"+message+"_"
+import mytoken
+import utility
 
 #Discord Bot Token
 token = mytoken.token
@@ -21,7 +17,7 @@ bot = commands.Bot(command_prefix='!')
 
 # Command for looking up summoner names on North American server
 @bot.command(name='opgg')
-async def opgg(ctx, *, summoner: str):
+async def opgg(ctx,*, summoner: str):
   try:
     # Start timer for function
     start = timer()
@@ -92,13 +88,13 @@ async def opgg(ctx, *, summoner: str):
 
 
   # We have 3 rows, Summoner name, Rank and Win ratio.  Place these values
-  embed.add_field(name='Summoner', value=bold(summoner)+" (NA)", inline=False)
+  embed.add_field(name='Summoner', value=utility.bold(summoner)+" (NA)", inline=False)
   embed.add_field(name='Rank', value=ranklbl, inline=False)
   embed.add_field(name='Win/Loss', value=winlosslbl, inline=False)
 
   # Stop the timer for the function, and place footer message including time the lookup took, and author's discord tag
   end = timer()
-  embed.set_footer(text="This lookup took %0.2f seconds.\nMade by Aalmost#5337" % (end-start))
+  embed.set_footer(text="Data taken from OP.GG\nThis lookup took %0.2f seconds." % (end-start), icon_url='https://static-s.aa-cdn.net/img/gp/20600001273372/UdvXlkugn0bJcwiDkqHKG5IElodmv-oL4kHlNAklSA2sdlVWhojsZKaPE-qFPueiZg=s300')
   await ctx.send(embed=embed)
 
 # Command used to easily exit the bot
