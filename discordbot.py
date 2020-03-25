@@ -8,8 +8,8 @@ from discord.ext import commands
 import mytoken
 import utility
 
-# Global variable for tracking current op.gg lookup region (default NA)
-cur_region = 'NA'
+# Dictionary for tracking current op.gg lookup region in different discord servers (default NA)
+cur_region = {}
 # List of possible regions
 regions = ['NA', 'EUW', 'KR', 'EUNE', 'JP', 'OCE', 'BR', 'LAS', 'LAN', 'RU', 'TR']
 
@@ -31,13 +31,21 @@ async def on_ready():
 @bot.command(name='region')
 async def region(ctx, rg: str='None'):
   global cur_region
+  
+  # Get server id, and check if this server already has a current region
+  id = ctx.message.guild.id
+  if(id not in cur_region):
+    cur_region[id] = 'NA'
+  
+  # If the user did not supply a region, print the current region
   if(rg == 'None'):
-    await ctx.send("Current region: %s" % cur_region)
+    await ctx.send("Current region: %s" % cur_region[id])
+  # Otherwise, set the region to the one supplied
   else:
     rg = rg.upper()
     if(rg in regions):
-      cur_region = rg
-      await ctx.send("Region has been switched to %s." % cur_region)
+      cur_region[id] = rg
+      await ctx.send("Region has been switched to %s." % cur_region[id])
     else:
       await ctx.send("Region %s is undefined." % rg)
   
@@ -48,6 +56,11 @@ async def opgg(ctx, *, summoner: str):
     # Start timer for function
     start = timer()
 
+    # Get server id, and check if this server already has a current region
+    id = ctx.message.guild.id
+    if(id not in cur_region):
+      cur_region[id] = 'NA'
+
     # Send loading message
     embed = discord.Embed(
       color = discord.Color.orange()
@@ -57,22 +70,21 @@ async def opgg(ctx, *, summoner: str):
     message = await ctx.send(embed=embed)
 
     # Get url for the op.gg page depending on region
-    if(cur_region == 'KR'):
+    if(cur_region[id] == 'KR'):
       url = 'https://www.op.gg/summoner/userName=%s' % summoner
     else:
-      url = 'https://%s.op.gg/summoner/userName=%s' % (cur_region, summoner)
+      url = 'https://%s.op.gg/summoner/userName=%s' % (cur_region[id], summoner)
     
     # Get html from the url
     response = requests.get(url)
     soup = BeautifulSoup(response.text, 'html.parser')
 
     # Find summoner name and rank
-    names = soup.find_all(class_='Name')
-    summoner = names[0].get_text().strip()
+    summoner = soup.find(class_='Name').get_text().strip()
     # If the first name returned contains "[", then it means it was a pro player on op.gg.
     # So, it's actually the second name instance which is their summoner name
     if('[' in summoner):
-      summoner = names[1].get_text().strip()
+      summoner = soup.find_all(class_='Name')[1].get_text().strip()
     rank = soup.find(class_='TierRank').get_text().strip()
     
     # If the player is ranked, then get LP and win/loss record
@@ -91,7 +103,7 @@ async def opgg(ctx, *, summoner: str):
   # If an exception is thrown, the summoner does not exist
   except:
     await discord.Message.delete(message)
-    await ctx.send("Summoner does not exist.\nRegion: %s" % cur_region)
+    await ctx.send("Summoner does not exist.\nRegion: %s" % cur_region[id])
     return
   
   # Make embed message with orange color
@@ -131,9 +143,8 @@ async def opgg(ctx, *, summoner: str):
     embed.set_thumbnail(url='https://opgg-static.akamaized.net/images/medals/default.png?image=q_auto&v=1')
     ranklbl = "<:unranked:691812452383457390>" + ranklbl
 
-
   # We have 3 rows, Summoner name, Rank and Win ratio.  Place these values
-  embed.add_field(name='Summoner', value=utility.bold(summoner)+" (%s)"%cur_region, inline=False)
+  embed.add_field(name='Summoner', value=utility.bold(summoner)+" (%s)"%cur_region[id], inline=False)
   embed.add_field(name='Rank', value=ranklbl, inline=False)
   embed.add_field(name='Win/Loss', value=winlosslbl, inline=False)
 
