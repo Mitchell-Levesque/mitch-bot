@@ -2,7 +2,8 @@
 A multi-purpose Discord bot.
 
 ## Commands
-1) !opgg [summoner name]
+1) `!opgg <summoner name>`
+<br/>Returns a discord embedded message with summoner information including rank, lp and win/loss ratio of the summoner name provided.
 
-Returns a discord embed message with summoner information including rank, lp and win/loss ratio.
-
+2) `!region [region]`
+<br/>Switches the opgg region to the one provided.  If no region is provided, it will return which region is currently being used.
