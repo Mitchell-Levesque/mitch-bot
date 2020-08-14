@@ -1,5 +1,5 @@
 # mitch-bot
-A multi-purpose Discord bot.
+A multi-purpose Discord bot.  Currently doesn't do much, but can search summoners on op.gg in any region.
 
 ## Commands
 1) `!opgg <summoner name>`
